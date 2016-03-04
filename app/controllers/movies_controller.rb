@@ -11,11 +11,24 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @title_header = "hilite" if params[:sort] == "title"
-    @release_date_header = "hilite" if params[:sort] == "release_date"
-    @rating_filter = @all_ratings = Movie.all_ratings
-    @rating_filter = params[:ratings].keys if params[:ratings]
-    @movies = Movie.where(rating: @rating_filter).order(params[:sort])
+    session[:sort] = params[:sort] if params[:sort]
+    session[:ratings] = params[:ratings] if params[:ratings] 
+    
+    @all_ratings = Movie.all_ratings
+    
+    if params[:ratings] and (params[:sort] or session[:sort] == nil) then
+      @title_header = "hilite" if params[:sort] == "title"
+      @release_date_header = "hilite" if params[:sort] == "release_date"
+      @rating_filter = params[:ratings].keys 
+      @movies = Movie.where(rating: @rating_filter).order(params[:sort])
+    else 
+      if session[:ratings] == nil then
+        session[:ratings] = Hash.new
+        @all_ratings.each {|rating| (session[:ratings])[rating] = 1}
+      end
+      flash.keep
+      redirect_to :sort => session[:sort], :ratings => session[:ratings]
+    end
   end
 
   def new
